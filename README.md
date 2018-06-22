@@ -45,7 +45,6 @@ Documentation is available on the [homepage](http://blikblum.github.io/tinybind/
 ## Differences from Rivets.js
 
 * Public interface
-  * Remove component feature -> incomplete, untested code. Use web components libraries like SkateJs or LitElement
   * Add not/negate formatter
   * Remove unless and unchecked binders in favor of combining not/negate formatters with if/checked binders
   * Remove computed feature - can be replaced by an identity formatter

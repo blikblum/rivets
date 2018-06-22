@@ -5,17 +5,17 @@ describe('Routines', function() {
     var elem = document.createElement('input');
     elem.setAttribute('type', type);
     if (value !== undefined) {
-      elem.setAttribute('value', value)
+      elem.setAttribute('value', value);
     }
     document.body.appendChild(elem);
-    return elem
+    return elem;
   };
 
   var createOptionEls = function(val) {
     var option = document.createElement('option');
     option.value = val;
     option.textContent = val + ' text';
-    return option
+    return option;
   };
 
   var createSelectElement = function(isMultiple, optionValues) {
@@ -24,8 +24,8 @@ describe('Routines', function() {
     if (optionValues instanceof Array) {
       options = optionValues.map(createOptionEls);
       options.forEach(function(option) {
-        elem.appendChild(option)
-      })
+        elem.appendChild(option);
+      });
     } else {
       //grouped
       Object.keys(optionValues).forEach(function(group) {
@@ -33,14 +33,14 @@ describe('Routines', function() {
         optGroupEl.label = group;
         options = optionValues[group].map(createOptionEls);
         options.forEach(function(option) {
-          optGroupEl.appendChild(option)
+          optGroupEl.appendChild(option);
         });
-        elem.appendChild(optGroupEl)
+        elem.appendChild(optGroupEl);
       });
     }
     if (isMultiple) elem.multiple = true;
     document.body.appendChild(elem);
-    return elem
+    return elem;
   };
 
   beforeEach(function() {
@@ -64,58 +64,59 @@ describe('Routines', function() {
     falseRadioInput = createInputElement('radio', 'false');
 
     // to test the checkbox input scenario
-    checkboxInput = createInputElement('checkbox')  });
+    checkboxInput = createInputElement('checkbox');
+  });
 
   afterEach(function(){
     el.parentNode.removeChild(el);
     input.parentNode.removeChild(input);
     trueRadioInput.parentNode.removeChild(trueRadioInput);
     falseRadioInput.parentNode.removeChild(falseRadioInput);
-    checkboxInput.parentNode.removeChild(checkboxInput)
+    checkboxInput.parentNode.removeChild(checkboxInput);
   });
 
   describe('text', function() {
     it("sets the element's text content", function() {
       tinybind.binders.text(el, '<em>hello</em>');
       el.textContent.should.equal('<em>hello</em>');
-      el.innerHTML.should.equal('&lt;em&gt;hello&lt;/em&gt;')
+      el.innerHTML.should.equal('&lt;em&gt;hello&lt;/em&gt;');
     });
 
     it("sets the element's text content to zero when a numeric zero is passed", function() {
       tinybind.binders.text(el, 0);
       el.textContent.should.equal('0');
-      el.innerHTML.should.equal('0')
-    })
+      el.innerHTML.should.equal('0');
+    });
   });
 
   describe('html', function() {
     it("sets the element's HTML content", function() {
       tinybind.binders.html(el, '<strong>hello</strong>');
       el.textContent.should.equal('hello');
-      el.innerHTML.should.equal('<strong>hello</strong>')
+      el.innerHTML.should.equal('<strong>hello</strong>');
     });
 
     it("sets the element's HTML content to zero when a zero value is passed", function() {
       tinybind.binders.html(el, 0);
       el.textContent.should.equal('0');
-      el.innerHTML.should.equal('0')
-    })
+      el.innerHTML.should.equal('0');
+    });
   });
 
   describe('value', function() {
     it("sets the element's value", function() {
       tinybind.binders.value.routine(input, 'pitchfork');
-      input.value.should.equal('pitchfork')
+      input.value.should.equal('pitchfork');
     });
 
     it("applies a default value to the element when the model doesn't contain it", function() {
       tinybind.binders.value.routine(input, undefined);
-      input.value.should.equal('')
+      input.value.should.equal('');
     });
 
     it("sets the element's value to zero when a zero value is passed", function() {
       tinybind.binders.value.routine(input, 0);
-      input.value.should.equal('0')
+      input.value.should.equal('0');
     });
 
     describe('in a select element', function(){
@@ -123,31 +124,31 @@ describe('Routines', function() {
         selectEl = createSelectElement(false, ['a', 'b', 'c']);
         selectMultipleEl = createSelectElement(true, ['d', 'e', 'f']);
         groupedSelectEl = createSelectElement(false, {'group1': ['a'], 'group2': ['b', 'c']});
-        groupedMultipleSelectEl = createSelectElement(true, {'group1': ['a'], 'group2': ['b', 'c']})
+        groupedMultipleSelectEl = createSelectElement(true, {'group1': ['a'], 'group2': ['b', 'c']});
       });
 
       it("sets the correct option on a select element", function() {
         tinybind.binders.value.routine(selectEl, 'b');
         tinybind.binders.value.routine(selectEl, 'c');
-        selectEl.value.should.equal('c')
+        selectEl.value.should.equal('c');
       });
 
       it("sets the correct option on a select-multiple element", function() {
         tinybind.binders.value.routine(selectMultipleEl, ['d', 'f']);
         Array.prototype.slice.call(selectMultipleEl.children)
           .filter(function(option) {
-            return option.selected
+            return option.selected;
           })
           .map(function(option) {
-            return option.value
+            return option.value;
           })
-          .should.eql(['d', 'f'])
+          .should.eql(['d', 'f']);
       });
 
       it("sets the correct option on a grouped select element", function() {
         tinybind.binders.value.routine(groupedSelectEl, 'b');
         tinybind.binders.value.routine(groupedSelectEl, 'c');
-        groupedSelectEl.value.should.equal('c')
+        groupedSelectEl.value.should.equal('c');
       });
 
       it("sets the correct option on a select-multiple element", function() {
@@ -155,21 +156,21 @@ describe('Routines', function() {
         tinybind.binders.value.routine(groupedMultipleSelectEl, ['a', 'c']);
         Array.prototype.slice.call(groupedMultipleSelectEl.options)
           .filter(function(option) {
-            return option.selected
+            return option.selected;
           })
           .map(function(option) {
-            return option.value
+            return option.value;
           })
-          .should.eql(['a', 'c'])
+          .should.eql(['a', 'c']);
       });
 
       afterEach(function () {
         selectEl.parentNode.removeChild(selectEl);
         selectMultipleEl.parentNode.removeChild(selectMultipleEl);
         groupedSelectEl.parentNode.removeChild(groupedSelectEl);
-        groupedMultipleSelectEl.parentNode.removeChild(groupedMultipleSelectEl)
-      })
-    })
+        groupedMultipleSelectEl.parentNode.removeChild(groupedMultipleSelectEl);
+      });
+    });
   });
 
 
@@ -177,64 +178,64 @@ describe('Routines', function() {
     describe('with a truthy value', function() {
       it('shows the element', function() {
         tinybind.binders.show(el, true);
-        el.style.display.should.equal('')
-      })
+        el.style.display.should.equal('');
+      });
     });
 
     describe('with a falsey value', function() {
       it('hides the element', function() {
         tinybind.binders.show(el, false);
-        el.style.display.should.equal('none')
-      })
-    })
+        el.style.display.should.equal('none');
+      });
+    });
   });
 
   describe('hide', function() {
     describe('with a truthy value', function() {
       it('hides the element', function() {
         tinybind.binders.hide(el, true);
-        el.style.display.should.equal('none')
-      })
+        el.style.display.should.equal('none');
+      });
     });
 
     describe('with a falsey value', function() {
       it('shows the element', function() {
         tinybind.binders.hide(el, false);
-        el.style.display.should.equal('')
-      })
-    })
+        el.style.display.should.equal('');
+      });
+    });
   });
 
   describe('enabled', function() {
     describe('with a truthy value', function() {
       it('enables the element', function() {
         tinybind.binders.enabled(el, true);
-        el.disabled.should.equal(false)
-      })
+        el.disabled.should.equal(false);
+      });
     });
 
     describe('with a falsey value', function() {
       it('disables the element', function() {
         tinybind.binders.enabled(el, false);
-        el.disabled.should.equal(true)
-      })
-    })
+        el.disabled.should.equal(true);
+      });
+    });
   });
 
   describe('disabled', function() {
     describe('with a truthy value', function() {
       it('disables the element', function() {
         tinybind.binders.disabled(el, true);
-        el.disabled.should.equal(true)
-      })
+        el.disabled.should.equal(true);
+      });
     });
 
     describe('with a falsey value', function() {
       it('enables the element', function() {
         tinybind.binders.disabled(el, false);
-        el.disabled.should.equal(false)
-      })
-    })
+        el.disabled.should.equal(false);
+      });
+    });
   });
 
   describe('checked', function() {
@@ -242,48 +243,48 @@ describe('Routines', function() {
       describe('and a truthy value', function() {
         it('checks the checkbox input', function() {
           tinybind.binders.checked.routine(checkboxInput, true);
-          checkboxInput.checked.should.equal(true)
-        })
+          checkboxInput.checked.should.equal(true);
+        });
       });
 
       describe('with a falsey value', function() {
         it('unchecks the checkbox input', function() {
           tinybind.binders.checked.routine(checkboxInput, false);
-          checkboxInput.checked.should.equal(false)
-        })
-      })
+          checkboxInput.checked.should.equal(false);
+        });
+      });
     });
 
     describe('with a radio input with value="true"', function() {
       describe('and a truthy value', function() {
         it('checks the radio input', function() {
           tinybind.binders.checked.routine(trueRadioInput, true);
-          trueRadioInput.checked.should.equal(true)
-        })
+          trueRadioInput.checked.should.equal(true);
+        });
       });
 
       describe('with a falsey value', function() {
         it('unchecks the radio input', function() {
           tinybind.binders.checked.routine(trueRadioInput, false);
-          trueRadioInput.checked.should.equal(false)
-        })
-      })
+          trueRadioInput.checked.should.equal(false);
+        });
+      });
     });
 
     describe('with a radio input with value="false"', function() {
       describe('and a truthy value', function() {
         it('checks the radio input', function() {
           tinybind.binders.checked.routine(falseRadioInput, true);
-          falseRadioInput.checked.should.equal(false)
-        })
+          falseRadioInput.checked.should.equal(false);
+        });
       });
 
       describe('with a falsey value', function() {
         it('unchecks the radio input', function() {
           tinybind.binders.checked.routine(falseRadioInput, false);
-          falseRadioInput.checked.should.equal(true)
-        })
-      })
-    })
+          falseRadioInput.checked.should.equal(true);
+        });
+      });
+    });
   });
 });

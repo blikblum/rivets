@@ -1,7 +1,7 @@
 describe('Parsers', function () {
   describe("parseTemplate()", function() {
     it("tokenizes a text template", function() {
-      template = "Hello {{ user.name }}, you have {{ user.messages.unread | length }} unread messages."
+      template = "Hello {{ user.name }}, you have {{ user.messages.unread | length }} unread messages.";
 
       expected = [
         {type: 0, value: "Hello "},
@@ -9,41 +9,41 @@ describe('Parsers', function () {
         {type: 0, value: ", you have "},
         {type: 1, value: "user.messages.unread | length"},
         {type: 0, value: " unread messages."}
-      ]
+      ];
 
-      results = tinybind.parseTemplate(template, ['{{', '}}'])
-      results.length.should.equal(5)
+      results = tinybind.parseTemplate(template, ['{{', '}}']);
+      results.length.should.equal(5);
 
       for (i = 0; i < results.length; i++) {
-        results[i].type.should.equal(expected[i].type)
-        results[i].value.should.equal(expected[i].value)
+        results[i].type.should.equal(expected[i].type);
+        results[i].value.should.equal(expected[i].value);
       }
-    })
+    });
 
     describe("with no binding fragments", function() {
       it("should return undefined", function() {
-        template = "Hello World!"
+        template = "Hello World!";
 
-        results = tinybind.parseTemplate(template, ['{{', '}}'])
-        Should.not.exist(results)
-      })
-    })
+        results = tinybind.parseTemplate(template, ['{{', '}}']);
+        should.not.exist(results);
+      });
+    });
 
     describe("with only a binding fragment", function() {
       it("should return a single binding token", function() {
-        template = "{{ user.name }}"
-        expected = [{type: 1, value: "user.name"}]
+        template = "{{ user.name }}";
+        expected = [{type: 1, value: "user.name"}];
 
-        results = tinybind.parseTemplate(template, ['{{', '}}'])
-        results.length.should.equal(1)
+        results = tinybind.parseTemplate(template, ['{{', '}}']);
+        results.length.should.equal(1);
 
         for (i = 0; i < results.length; i++) {
-          results[i].type.should.equal(expected[i].type)
-          results[i].value.should.equal(expected[i].value)
+          results[i].type.should.equal(expected[i].type);
+          results[i].value.should.equal(expected[i].value);
         }
-      })
-    })
-  })
+      });
+    });
+  });
 
   describe('parseType', function () {
     it('parses string primitives', function () {
@@ -93,5 +93,5 @@ describe('Parsers', function () {
       token.type.should.equal(1);
       token.value.should.equal('3a');
     });
-  })
+  });
 });

@@ -8,11 +8,11 @@ describe("tinybind.formatters", function() {
         fn: function(arg1, arg2) {
           return '' + arg1 + arg2;
         }
-      }
+      };
     });
 
     it("calls function with arguments", function() {
-      tinybind.formatters['call'](model.fn, 'foo', 'bar').should.equal('foobar')
+      tinybind.formatters.call(model.fn, 'foo', 'bar').should.equal('foobar');
     });
 
     it("calls function with the model as context", function() {
@@ -25,7 +25,7 @@ describe("tinybind.formatters", function() {
       var el = document.createElement('div');
       el.setAttribute('rv-text', 'obj.fn | call');
       tinybind.bind(el, model);
-      el.innerText.should.equal('foo')
-    })
-  })
+      el.innerText.should.equal('foo');
+    });
+  });
 });

@@ -6,20 +6,35 @@
 
   var OPTIONS = ['prefix', 'templateDelimiters', 'rootInterface', 'preloadData', 'handler'];
 
-  var EXTENSIONS = ['binders', 'formatters', 'adapters'];
+  var EXTENSIONS = ['binders', 'formatters', 'components', 'adapters'];
 
+  /**
+   * Used also in parsers.parseType
+   * TODO outsource
+   */
   var PRIMITIVE = 0;
   var KEYPATH = 1;
+
+  var QUOTED_STR = /^'.*'$|^".*"$/; // regex to test if string is wrapped in " or '
+
+  // Used in parsers.parseTemplate
   var TEXT = 0;
   var BINDING = 1;
 
-  var QUOTED_STR = /^'.*'$|^".*"$/;
+  // Test if string is a json string
+  function isJson(str) {
+    try {
+      var val = JSON.parse(str);
+      return val instanceof Array || val instanceof Object ? true : false;
+    } catch (error) {
+      return false;
+    }
+  }
 
   // Parser and tokenizer for getting the type and value from a string.
   function parseType(string) {
     var type = PRIMITIVE;
     var value = string;
-
     if (QUOTED_STR.test(string)) {
       value = string.slice(1, -1);
     } else if (string === 'true') {
@@ -32,10 +47,11 @@
       value = undefined;
     } else if (!isNaN(string)) {
       value = Number(string);
+    } else if (isJson(string)) {
+      value = JSON.parse(string);
     } else {
       type = KEYPATH;
     }
-
     return { type: type, value: value };
   }
 
@@ -63,7 +79,7 @@
 
         break;
       } else {
-        tokens || (tokens = []);
+        tokens = tokens || [];
         if (index > 0 && lastIndex < index) {
           tokens.push({
             type: TEXT,
@@ -107,6 +123,9 @@
   var tinybind = {
     // Global binders.
     binders: {},
+
+    // Global components.
+    components: {},
 
     // Global formatters.
     formatters: {},
@@ -281,7 +300,8 @@
           unreached = index;
         }
 
-        if (prev = this.objectPath[index]) {
+        prev = this.objectPath[index];
+        if (prev) {
           this.set(false, token, prev, this);
         }
       }
@@ -350,7 +370,8 @@
 
     for (var index = 0; index < this.tokens.length; index++) {
       token = this.tokens[index];
-      if (obj = this.objectPath[index]) {
+      obj = this.objectPath[index];
+      if (obj) {
         this.set(false, token, obj, this);
       }
     }
@@ -387,6 +408,30 @@
     }
   };
 
+  var inherits = function (subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
+    }
+
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
+  };
+
+  var possibleConstructorReturn = function (self, call) {
+    if (!self) {
+      throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+    }
+
+    return call && (typeof call === "object" || typeof call === "function") ? call : self;
+  };
+
   function getInputValue(el) {
     var results = [];
     if (el.type === 'checkbox') {
@@ -407,6 +452,13 @@
 
   var FORMATTER_ARGS = /[^\s']+|'([^']|'[^\s])*'|"([^"]|"[^\s])*"/g;
   var FORMATTER_SPLIT = /\s+/;
+
+  /**
+   * Used also in parsers.parseType
+   * TODO outsource
+   */
+  var PRIMITIVE$1 = 0;
+  var KEYPATH$1 = 1;
 
   // A single binding between a model attribute and a DOM element.
   var Binding = function () {
@@ -437,12 +489,13 @@
     Binding.prototype.parseTarget = function parseTarget() {
       if (this.keypath) {
         var token = parseType(this.keypath);
-
-        if (token.type === 0) {
+        if (token.type === PRIMITIVE$1) {
           this.value = token.value;
-        } else {
+        } else if (token.type === KEYPATH$1) {
           this.observer = this.observe(this.view.models, this.keypath);
           this.model = this.observer.target;
+        } else {
+          throw new Error('Unknown type in token', token);
         }
       } else {
         this.value = undefined;
@@ -456,9 +509,9 @@
         var type = _ref.type,
             value = _ref.value;
 
-        if (type === 0) {
+        if (type === PRIMITIVE$1) {
           return value;
-        } else {
+        } else if (type === KEYPATH$1) {
           if (!_this.formatterObservers[formatterIndex]) {
             _this.formatterObservers[formatterIndex] = {};
           }
@@ -471,6 +524,8 @@
           }
 
           return observer.value();
+        } else {
+          throw new Error('Unknown type', type, value);
         }
       });
     };
@@ -635,6 +690,201 @@
     return Binding;
   }();
 
+  /**
+   * Used also in parsers.parseType
+   * TODO outsource
+   */
+  var PRIMITIVE$2 = 0;
+  var KEYPATH$2 = 1;
+
+  // component view encapsulated as a binding within it's parent view.
+  var ComponentBinding = function (_Binding) {
+    inherits(ComponentBinding, _Binding);
+
+    // Initializes a component binding for the specified view. The raw component
+    // element is passed in along with the component type. Attributes and scope
+    // inflections are determined based on the components defined attributes.
+    function ComponentBinding(view, el, type) {
+      classCallCheck(this, ComponentBinding);
+
+      var _this = possibleConstructorReturn(this, _Binding.call(this, view, el, type, null, null, null, null));
+
+      _this.view = view;
+      _this.el = el;
+      _this.type = type;
+      _this.component = view.options.components[_this.type];
+      _this.static = {};
+      _this.observers = {};
+      _this.upstreamObservers = {};
+
+      var bindingPrefix = tinybind._fullPrefix;
+
+      // parse component attributes
+      for (var i = 0, len = el.attributes.length; i < len; i++) {
+        var attribute = el.attributes[i];
+
+        // if attribute starts not with binding prefix. E.g. rv-
+        if (attribute.name.indexOf(bindingPrefix) !== 0) {
+          var propertyName = _this.camelCase(attribute.name);
+          var token = parseType(attribute.value);
+          var stat = _this.component.static;
+
+          if (stat && stat.indexOf(propertyName) > -1) {
+            _this.static[propertyName] = attribute.value;
+          } else if (token.type === PRIMITIVE$2) {
+            _this.static[propertyName] = token.value;
+          } else if (token.type === KEYPATH$2) {
+            _this.observers[propertyName] = attribute.value;
+          } else {
+            throw new Error('can\'t parse component attribute', attribute, token);
+          }
+        }
+      }
+      return _this;
+    }
+
+    // Intercepts `tinybind.Binding::sync` since component bindings are not bound to
+    // a particular model to update it's value.
+
+
+    ComponentBinding.prototype.sync = function sync() {};
+
+    // Intercepts `tinybind.Binding::update` since component bindings are not bound
+    // to a particular model to update it's value.
+
+
+    ComponentBinding.prototype.update = function update() {};
+
+    // Intercepts `tinybind.Binding::publish` since component bindings are not bound
+    // to a particular model to update it's value.
+
+
+    ComponentBinding.prototype.publish = function publish() {};
+
+    // Returns an object map using the component's scope inflections.
+
+
+    ComponentBinding.prototype.locals = function locals() {
+      var _this2 = this;
+
+      var result = {};
+
+      Object.keys(this.static).forEach(function (key) {
+        result[key] = _this2.static[key];
+      });
+
+      Object.keys(this.observers).forEach(function (key) {
+        result[key] = _this2.observers[key].value();
+      });
+
+      return result;
+    };
+
+    // Returns a camel-cased version of the string. Used when translating an
+    // element's attribute name into a property name for the component's scope.
+
+
+    ComponentBinding.prototype.camelCase = function camelCase(string) {
+      return string.replace(/-([a-z])/g, function (grouped) {
+        return grouped[1].toUpperCase();
+      });
+    };
+
+    // Intercepts `tinybind.Binding::bind` to build `@componentView` with a localized
+    // map of models from the root view. Bind `@componentView` on subsequent calls.
+
+
+    ComponentBinding.prototype.bind = function bind() {
+      var _this3 = this;
+
+      var options = {};
+      if (!this.bound) {
+        Object.keys(this.observers).forEach(function (key) {
+          var keypath = _this3.observers[key];
+
+          _this3.observers[key] = _this3.observe(_this3.view.models, keypath, function (key) {
+            return function () {
+              _this3.componentView.models[key] = _this3.observers[key].value();
+            };
+          }.call(_this3, key));
+        });
+
+        this.bound = true;
+      }
+
+      if (this.componentView) {
+        this.componentView.bind();
+      } else {
+        this.el.innerHTML = this.component.template.call(this);
+        var scope = this.component.initialize.call(this, this.el, this.locals());
+        this.el._bound = true;
+
+        EXTENSIONS.forEach(function (extensionType) {
+          options[extensionType] = {};
+
+          if (_this3.component[extensionType]) {
+            Object.keys(_this3.component[extensionType]).forEach(function (key) {
+              options[extensionType][key] = _this3.component[extensionType][key];
+            });
+          }
+
+          Object.keys(_this3.view.options[extensionType]).forEach(function (key) {
+            if (options[extensionType][key]) {
+              options[extensionType][key] = _this3.view[extensionType][key];
+            }
+          });
+        });
+
+        OPTIONS.forEach(function (option) {
+          if (_this3.component[option] != null) {
+            options[option] = _this3.component[option];
+          } else {
+            options[option] = _this3.view[option];
+          }
+        });
+
+        //there's a cyclic dependency that makes imported View a dummy object. Use tinybind.bind
+        //this.componentView = new View(this.el, scope, options)
+        //this.componentView.bind()
+        this.componentView = tinybind.bind(Array.prototype.slice.call(this.el.childNodes), scope, options);
+
+        Object.keys(this.observers).forEach(function (key) {
+          var observer = _this3.observers[key];
+          var models = _this3.componentView.models;
+
+          var upstream = _this3.observe(models, key, function (key, observer) {
+            return function () {
+              observer.setValue(_this3.componentView.models[key]);
+            };
+          }.call(_this3, key, observer));
+
+          _this3.upstreamObservers[key] = upstream;
+        });
+      }
+    };
+
+    // Intercept `tinybind.Binding::unbind` to be called on `@componentView`.
+
+
+    ComponentBinding.prototype.unbind = function unbind() {
+      var _this4 = this;
+
+      Object.keys(this.upstreamObservers).forEach(function (key) {
+        _this4.upstreamObservers[key].unobserve();
+      });
+
+      Object.keys(this.observers).forEach(function (key) {
+        _this4.observers[key].unobserve();
+      });
+
+      if (this.componentView) {
+        this.componentView.unbind.call(this);
+      }
+    };
+
+    return ComponentBinding;
+  }(Binding);
+
   var textBinder = {
     routine: function routine(node, value) {
       node.data = value != null ? value : '';
@@ -707,9 +957,7 @@
 
     View.prototype.buildBinding = function buildBinding(node, type, declaration, binder, arg) {
       var pipes = declaration.match(DECLARATION_SPLIT).map(trimStr);
-
       var keypath = pipes.shift();
-
       this.bindings.push(new Binding(this, node, type, keypath, binder, arg, pipes));
     };
 
@@ -740,6 +988,7 @@
 
       for (var i = 0, len = attributes.length; i < len; i++) {
         var attribute = attributes[i];
+        // if attribute starts with the binding prefix. E.g. rv
         if (attribute.name.indexOf(bindingPrefix) === 0) {
           type = attribute.name.slice(bindingPrefix.length);
           binder = this.options.binders[type];
@@ -774,6 +1023,16 @@
         var bindInfo = bindInfos[_i2];
         this.buildBinding(node, bindInfo.type, bindInfo.attr.value, bindInfo.binder, bindInfo.arg);
         node.removeAttribute(bindInfo.attr.name);
+      }
+
+      // bind components
+      if (!block) {
+        type = node.nodeName.toLowerCase();
+
+        if (this.options.components[type] && !node._bound) {
+          this.bindings.push(new ComponentBinding(this, node, type));
+          block = true;
+        }
       }
 
       return block;
@@ -1106,6 +1365,12 @@
 
         var modelName = this.arg;
         collection = collection || [];
+
+        // TODO support object keys to iterate over
+        if (!Array.isArray(collection)) {
+          throw new Error('each-' + modelName + ' needs an arry to iterate over, but it is', collection);
+        }
+
         var indexProp = el.getAttribute('index-property') || '$index';
 
         collection.forEach(function (model, index) {
@@ -1194,7 +1459,7 @@
     'class-*': function _class(el, value) {
       var elClass = ' ' + el.className + ' ';
 
-      if (!value === elClass.indexOf(' ' + this.arg + ' ') > -1) {
+      if (value !== elClass.indexOf(' ' + this.arg + ' ') > -1) {
         if (value) {
           el.className = el.className + ' ' + this.arg;
         } else {
@@ -1334,7 +1599,8 @@
       },
 
       routine: function routine(el, value) {
-        if (!!value !== this.attached) {
+        value = !!value;
+        if (value !== this.attached) {
           if (value) {
 
             if (!this.nested) {
@@ -1398,6 +1664,24 @@
     Observer.updateOptions(viewOptions);
 
     var view = new View(el, models, viewOptions);
+    view.bind();
+    return view;
+  };
+
+  // Initializes a new instance of a component on the specified element and
+  // returns a tinybind.View instance.		
+  tinybind.init = function (component, el) {
+    var data = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {};
+
+    if (!el) {
+      el = document.createElement('div');
+    }
+
+    component = tinybind.components[component];
+    el.innerHTML = component.template.call(tinybind, el);
+    var scope = component.initialize.call(tinybind, el, data);
+
+    var view = tinybind.bind(el, scope);
     view.bind();
     return view;
   };

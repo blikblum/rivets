@@ -6,7 +6,7 @@ module.exports = function(env) {
     }
 
     if (env.minimize) {
-      entry['tinybind.min'] = './src/export.js'
+      entry['tinybind.min'] = './src/export.js';
     }
 
    return {

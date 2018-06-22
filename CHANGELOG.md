@@ -1,3 +1,17 @@
+# 0.12
+
+#### Changes
+
+- components feature restored
+- cleanups
+- Updated dependencies
+
+# 0.11 and before
+
+#### Changes
+
+- Changes from the Rivets.js fork called [tinybind](https://github.com/blikblum/tinybind)
+
 # 0.8
 
 #### Changes

@@ -4,31 +4,31 @@ describe("tinybind.binders", function() {
   beforeEach(function() {
     context = {
       publish: function() {}
-    }
+    };
   });
 
   describe("value", function() {
     var el;
 
     beforeEach(function() {
-      el = document.createElement('input')
+      el = document.createElement('input');
     });
 
     it("unbinds the same bound function", function() {
       var boundFn;
 
-      sinon.stub(el, 'addEventListener', function(event, fn) {
-        boundFn = fn
+      sinon.stub(el, 'addEventListener').callsFake(function(event, fn) {
+        boundFn = fn;
       });
 
       tinybind.binders.value.bind.call(context, el);
 
-      sinon.stub(el, 'removeEventListener', function(event, fn) {
-        fn.should.equal(boundFn)
+      sinon.stub(el, 'removeEventListener').callsFake(function(event, fn) {
+        fn.should.equal(boundFn);
       });
 
-      tinybind.binders.value.unbind.call(context, el)
-    })
+      tinybind.binders.value.unbind.call(context, el);
+    });
   });
 
   describe("each-*", function() {
@@ -51,25 +51,25 @@ describe("tinybind.binders", function() {
       var view = tinybind.bind(fragment, model);
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
     });
 
     it("reflects changes to the model into the DOM", function() {
       var view = tinybind.bind(fragment, model);
-      Should(fragment.childNodes[1].textContent).be.exactly("0");
+      should(fragment.childNodes[1].textContent).be.exactly("0");
 
       model.items[0].val = "howdy";
-      Should(fragment.childNodes[1].textContent).be.exactly("howdy");
+      should(fragment.childNodes[1].textContent).be.exactly("howdy");
     });
 
     it("reflects changes to the model into the DOM after unbind/bind", function() {
       var view = tinybind.bind(fragment, model);
-      Should(fragment.childNodes[1].textContent).be.exactly("0");
+      should(fragment.childNodes[1].textContent).be.exactly("0");
 
       view.unbind();
       view.bind();
       model.items[0].val = "howdy";
-      Should(fragment.childNodes[1].textContent).be.exactly("howdy");
+      should(fragment.childNodes[1].textContent).be.exactly("howdy");
     });
 
     it("lets you push an item", function() {
@@ -77,11 +77,11 @@ describe("tinybind.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
 
       model.items.push({val: 3});
-      Should(model.items.length).be.exactly(originalLength + 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(model.items.length).be.exactly(originalLength + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
     });
 
     it("lets you pop an item", function() {
@@ -89,16 +89,16 @@ describe("tinybind.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
       [].forEach.call(fragment.childNodes, function (itemEl, index) {
-        itemEl._key = index
+        itemEl._key = index;
       });
 
       model.items.pop();
-      Should(model.items.length).be.exactly(originalLength - 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
-      Should(fragment.childNodes[1]._key).be.exactly(1);
-      Should(fragment.childNodes[2]._key).be.exactly(2)
+      should(model.items.length).be.exactly(originalLength - 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes[1]._key).be.exactly(1);
+      should(fragment.childNodes[2]._key).be.exactly(2);
     });
 
     it("lets you shift an item", function() {
@@ -106,16 +106,16 @@ describe("tinybind.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
       [].forEach.call(fragment.childNodes, function (itemEl, index) {
-        itemEl._key = index
+        itemEl._key = index;
       });
 
       model.items.shift();
-      Should(model.items.length).be.exactly(originalLength - 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
-      Should(fragment.childNodes[1]._key).be.exactly(2);
-      Should(fragment.childNodes[2]._key).be.exactly(3)
+      should(model.items.length).be.exactly(originalLength - 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes[1]._key).be.exactly(2);
+      should(fragment.childNodes[2]._key).be.exactly(3);
     });
 
     it("lets you splice an item", function() {
@@ -123,18 +123,18 @@ describe("tinybind.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
       [].forEach.call(fragment.childNodes, function (itemEl, index) {
-        itemEl._key = index
+        itemEl._key = index;
       });
 
       model.items.splice(1, 1, {val: 'x'}, {val: 'y'});
-      Should(model.items.length).be.exactly(originalLength + 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
-      Should(fragment.childNodes[1]._key).be.exactly(1);
-      Should(fragment.childNodes[2]._key).be.exactly(undefined);
-      Should(fragment.childNodes[3]._key).be.exactly(undefined);
-      Should(fragment.childNodes[4]._key).be.exactly(3);
+      should(model.items.length).be.exactly(originalLength + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes[1]._key).be.exactly(1);
+      should(fragment.childNodes[2]._key).be.exactly(undefined);
+      should(fragment.childNodes[3]._key).be.exactly(undefined);
+      should(fragment.childNodes[4]._key).be.exactly(3);
     });
 
     it("lets you push an item after unbind/bind", function() {
@@ -142,14 +142,14 @@ describe("tinybind.binders", function() {
       var originalLength  = model.items.length;
 
       // one child for each element in the model plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
 
       view.unbind();
       view.bind();
 
       model.items.push({val: 3});
-      Should(model.items.length).be.exactly(originalLength + 1);
-      Should(fragment.childNodes.length).be.exactly(model.items.length + 1);
+      should(model.items.length).be.exactly(originalLength + 1);
+      should(fragment.childNodes.length).be.exactly(model.items.length + 1);
     });
   });
 
@@ -182,36 +182,36 @@ describe("tinybind.binders", function() {
       nestedEl.textContent = '{$parent.$index}-{$index}';
       var view = tinybind.bind(el, model);
 
-      Should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('0-0');
-      Should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('0-1');
-      Should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('1-1');
+      should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('0-0');
+      should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('0-1');
+      should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('1-1');
     });
 
     it("lets you access properties from parent scopes", function() {
       nestedEl.textContent = '{root}!{item.name}';
       var view = tinybind.bind(el, model);
 
-      Should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('Root Node!Level 1 - 0');
-      Should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('Root Node!Level 1 - 0');
-      Should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('Root Node!Level 1 - 1');
+      should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('Root Node!Level 1 - 0');
+      should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('Root Node!Level 1 - 0');
+      should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('Root Node!Level 1 - 1');
     });
 
     it("reflects changes in parent scopes properties", function() {
       nestedEl.textContent = '{root}!{item.name}';
       var view = tinybind.bind(el, model);
       model.root = 'New';
-      Should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('New!Level 1 - 0');
-      Should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('New!Level 1 - 0');
-      Should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('New!Level 1 - 1');
+      should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('New!Level 1 - 0');
+      should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('New!Level 1 - 0');
+      should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('New!Level 1 - 1');
     });
 
     it("reflects changes when an undefined property is set in root scope", function() {
       nestedEl.textContent = '{unset}';
       var view = tinybind.bind(el, model);
       model.unset = 'NotUndefined';
-      Should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('NotUndefined');
-      Should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('NotUndefined');
-      Should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('NotUndefined');
+      should(fragment.childNodes[1].childNodes[1].textContent).be.exactly('NotUndefined');
+      should(fragment.childNodes[1].childNodes[2].textContent).be.exactly('NotUndefined');
+      should(fragment.childNodes[2].childNodes[2].textContent).be.exactly('NotUndefined');
     });
 
   });
@@ -239,8 +239,8 @@ describe("tinybind.binders", function() {
       var view = tinybind.bind(fragment, model);
 
       // one child for the original div plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(2);
-      Should(fragment.childNodes[1].innerHTML).be.exactly("1");
+      should(fragment.childNodes.length).be.exactly(2);
+      should(fragment.childNodes[1].innerHTML).be.exactly("1");
     });
 
     it("hides if the value is false", function() {
@@ -249,7 +249,7 @@ describe("tinybind.binders", function() {
       model.data.show = false;
 
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("keeps binding when element becomes visible again", function() {
@@ -260,8 +260,8 @@ describe("tinybind.binders", function() {
       model.data.show = true;
 
       // one child for the original div plus 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(2);
-      Should(fragment.childNodes[1].innerHTML).be.exactly("2");
+      should(fragment.childNodes.length).be.exactly(2);
+      should(fragment.childNodes[1].innerHTML).be.exactly("2");
     });
 
     it("hides if the value is falsey - zero", function() {
@@ -269,7 +269,7 @@ describe("tinybind.binders", function() {
 
       model.data.show = 0;
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("hides if the value is falsey - empty string", function() {
@@ -277,7 +277,7 @@ describe("tinybind.binders", function() {
 
       model.data.show = "";
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("hides if the value is falsey - undefined", function() {
@@ -285,7 +285,7 @@ describe("tinybind.binders", function() {
 
       model.data.show = undefined;
       // 1 for the comment placeholder
-      Should(fragment.childNodes.length).be.exactly(1);
+      should(fragment.childNodes.length).be.exactly(1);
     });
 
     it("rebindes nested if", function() {
@@ -298,12 +298,12 @@ describe("tinybind.binders", function() {
 
       model.data.countNested = "1";
       model.data.showNested = true;
-      Should(nestedEl.innerHTML).be.exactly("1");
+      should(nestedEl.innerHTML).be.exactly("1");
       model.data.show = false;
       model.data.show = true;
       model.data.countNested = "42";
 
-      Should(nestedEl.innerHTML).be.exactly("42");
+      should(nestedEl.innerHTML).be.exactly("42");
     });
 
     it("respects nested if state after rebind", function() {
@@ -314,11 +314,11 @@ describe("tinybind.binders", function() {
       var view = tinybind.bind(fragment, model);
 
       model.data.showNested = true;
-      Should(el.contains(nestedEl)).be.true;
+      should(el.contains(nestedEl)).be.true();
       model.data.show = false;
       model.data.showNested = false;
       model.data.show = true;
-      Should(el.contains(nestedEl)).be.false;
+      should(el.contains(nestedEl)).be.false();
     });
 
     it("does not throw when root scope is reset", function () {
@@ -337,7 +337,7 @@ describe("tinybind.binders", function() {
       (function(){
         model.scope.error = {};
       }).should.not.throw();
-    })
+    });
   });
  
   describe("Custom binder with no attribute value", function() {
@@ -357,12 +357,12 @@ describe("tinybind.binders", function() {
     it("receives undefined when html attribute is not specified", function() {
       el.innerHTML = "<div rv-custom-binder></div>";
       var view = tinybind.bind(fragment, model);
-      Should(el.children[0].innerHTML).be.exactly('received undefined');
+      should(el.children[0].innerHTML).be.exactly('received undefined');
     });
     it("receives undefined when html attribute is not specified", function() {
       el.innerHTML = "<div rv-custom-binder=''></div>";
       var view = tinybind.bind(fragment, model);
-      Should(el.children[0].innerHTML).be.exactly('received undefined');
+      should(el.children[0].innerHTML).be.exactly('received undefined');
     });
   });
 
@@ -411,12 +411,12 @@ describe("tinybind.binders", function() {
     it('observes array changes after another array binding is unbound', function() {
       var view = tinybind.bind(fragment, model);
       model.scope.items.push({data:"data"});
-      Should(el3.childNodes.length).be.exactly(2);
+      should(el3.childNodes.length).be.exactly(2);
       model.scope.items.push({data:"data"});
-      Should(el3.childNodes.length).be.exactly(3);
+      should(el3.childNodes.length).be.exactly(3);
       model.scope.visible = false;
       model.scope.items.push({data:"data"});
-      Should(el3.childNodes.length).be.exactly(4);
+      should(el3.childNodes.length).be.exactly(4);
     });
   });
 });
